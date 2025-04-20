@@ -14,6 +14,7 @@ interface AuthState {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setUser: (user: User | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -39,6 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const data = await response.json();
+      localStorage.setItem("token", data.token);
       console.log("===========", data);
       set({
         isAuthenticated: true,
@@ -46,8 +48,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
         error: null,
       });
-
-      localStorage.setItem("token", data.token);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       set({ error: message, loading: false });
@@ -57,5 +57,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem("token");
     set({ isAuthenticated: false, user: null });
+  },
+  setUser: (user) => {
+    set({ user, isAuthenticated: !!user });
   },
 }));

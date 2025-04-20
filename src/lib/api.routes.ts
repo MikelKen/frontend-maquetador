@@ -14,4 +14,13 @@ export const API_ROUTES = {
     url: `${API_URL}/auth/login`,
     method: "POST",
   },
+  PROJECT_SHARE: {
+    url: `${API_URL}/project`,
+    method: "GET",
+  },
+
+  PROJECT_CREATE: {
+    url: `${API_URL}/project`,
+    method: "POST",
+  },
 };

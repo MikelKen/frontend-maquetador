@@ -7,8 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/lib/useAuthStore";
 import { useState } from "react";
+import { API_ROUTES } from "@/lib/api.routes";
+import { useRouter } from "next/navigation";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+  const router = useRouter();
+
   const { login, loading, error } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +20,30 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await login(email, password);
+    const { user, error } = useAuthStore.getState();
+    const token = localStorage.getItem("token");
+    console.log("TOKEN", token);
+
+    if (user && !error && token) {
+      const response = await fetch(API_ROUTES.PROJECT_CREATE.url, {
+        method: API_ROUTES.PROJECT_CREATE.method,
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: `Proyecto de ${user.name}`,
+        }),
+      });
+      const data = await response.json();
+      console.log("Data", data);
+      if (response.ok && data.shareId) {
+        alert("Proyecto creado exitosamente");
+        router.push(`/grapesjs/${data.shareId}`);
+      } else {
+        alert("Error al crear proyecto");
+      }
+    }
   };
 
   return (
