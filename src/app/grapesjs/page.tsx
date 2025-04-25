@@ -1,15 +1,21 @@
 "use client";
+import React, { useState } from "react";
+import StudioEditorComponent from "./components/StudioEditor";
+import Navbar from "@/components/Navbar";
+import type { Editor } from "grapesjs";
 
-import React from "react";
-import GrapesJs from "./grapesjs";
-
-function DesignUI() {
+function GrapesJsPage() {
+  const [editor, setEditor] = useState<Editor>();
+  const handleShare = () => {
+    console.log("Compartir proyecto");
+  };
   return (
-    <>
-      <div></div>
-      {/* <GrapesJs /> */}
-    </>
+    <main>
+      <Navbar onShare={handleShare} users={[]} editor={editor} />
+
+      <StudioEditorComponent onEditorReady={setEditor} />
+    </main>
   );
 }
 
-export default DesignUI;
+export default GrapesJsPage;

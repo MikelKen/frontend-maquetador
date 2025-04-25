@@ -1,4 +1,4 @@
-import { LoginForm } from "@/app/auth/sign-in/login-form";
+import { LoginForm } from "@/app/auth/sign-in/LoginForm";
 import React from "react";
 
 function SignIn() {

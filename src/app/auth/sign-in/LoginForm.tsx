@@ -40,6 +40,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       if (response.ok && data.shareId) {
         alert("Proyecto creado exitosamente");
         router.push(`/grapesjs/${data.shareId}`);
+        // router.push(`/project`);
       } else {
         alert("Error al crear proyecto");
       }
