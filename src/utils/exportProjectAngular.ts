@@ -27,151 +27,254 @@ export async function ExportProjectAngular(editor: Editor, projectName: string =
   const projectWithCode = { ...originalProject, pages: pagesWithCode };
   zip.file(`${projectName}.json`, JSON.stringify(projectWithCode, null, 2));
 
-  console.log("⚙️  ng new", projectWithCode);
-
   const scriptContent = `#!/usr/bin/env node
-/**
- * generate-from-grapes.js
- * Automatiza la creación de un proyecto Angular v19
- * desde un JSON exportado de GrapesJS.
- */
+
 const { exec } = require("child_process");
 const fs = require("fs/promises");
 const path = require("path");
 
-// Obtener el nombre del archivo actual sin la extensión .js
-const projectName = path.basename(__filename, '.js');  // Usamos __filename para obtener la ruta completa del archivo
+const execCmd = (cmd, options = {}) =>
+  new Promise((resolve, reject) =>
+    exec(cmd, options, (err, stdout, stderr) => (err ? reject(stderr) : resolve(stdout)))
+  );
 
-if (!projectName) {
-  console.error("Error: El nombre del proyecto no puede ser vacío.");
-  process.exit(1);  // Salir si no se puede obtener el nombre
+const pascalCase = (str) =>
+  str.replace(/[_\\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : "")).replace(/^./, (c) => c.toUpperCase());
+
+const kebabCase = (str) => str.toLowerCase().replace(/[_\\s]+/g, "-");
+
+async function generateAngularProject(appName) {
+  console.log(\`⚙️  Creando proyecto Angular: \${appName}\`);
+  await execCmd(\`npx @angular/cli@latest new \${appName} --routing --style=css --skip-install --defaults\`, {
+    stdio: "inherit",
+  });
 }
 
-const appName = \`\${projectName}\`;
-console.log('⚙️  ng new', appName);
-execSync(\`npx @angular/cli@19 new \${appName} --routing --style=css --skip-install --defaults\`, { stdio: 'inherit' });
+async function extractPagesFromJson(appName) {
+  const jsonFile = \`\${appName}.json\`; 
+  const raw = await fs.readFile(jsonFile, "utf8");
+  const json = JSON.parse(raw);
+  return json.pages || [];
+}
 
-fs.copyFileSync(\`\${appName}.json\`, \`\${appName}/grapesjs-project.json\`);
+function sanitizeName(name) {
+  const original = name;
+  const sanitized = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9 _-]/g, "")
+    .trim();
 
-const project = require(path.resolve(\`\${appName}.json\`));
-project.pages.forEach(page => {
-  const normalize = (str) =>
-  str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n").replace(/[^a-z0-9]+/gi, "-");
+  if (original !== sanitized) {
+    console.warn(\`⚠️  El nombre "\${original}" fue sanitizado a "\${sanitized}"\`);
+  }
 
-  const nameKebab = normalize(page.name.toLowerCase());
-  console.log('🚀 Generando componente', nameKebab);
-  execSync(\`npx ng generate component pages/\${nameKebab} --flat=false --module=app.module.ts\`, {
-    cwd: appName, stdio: 'inherit'
-  });
-  fs.writeFileSync(
-    path.join(appName, 'src/app/pages', nameKebab, \`\${nameKebab}.component.html\`),
-    page.html,
-    'utf-8'
-  );
-  fs.writeFileSync(
-    path.join(appName, 'src/app/pages', nameKebab, \`\${nameKebab}.component.css\`),
-    page.css,
-    'utf-8'
-  );
-});
+  return sanitized;
+}
 
-(() => {
-  const imports = project.pages.map(page => {
-    const normalize = (str) =>
-  str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n").replace(/[^a-z0-9]+/gi, "-");
+async function createComponentFromPage(appName, page) {
+  const sanitized = sanitizeName(page.name);
+  const kebab = kebabCase(sanitized);
+  const className = pascalCase(sanitized) + "Component";
+  const pageDir = path.join(appName, "src/app/pages", kebab);
 
-    const kebab = normalize(page.name.toLowerCase());
-    const className = page.name
-      .split(/\\s+/g)
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join('') + 'Component';
-     return \`import { \${className} } from './pages/\${kebab}/\${kebab}.component';\`;
-  }).join('\\n');
+  await execCmd(\`npx ng generate component pages/\${kebab} --module=app.module.ts\`, { cwd: appName });
+  await fs.mkdir(pageDir, { recursive: true });
 
-  const routes = project.pages.map((page, i) => {
-  const normalize = (str) =>
-  str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n").replace(/[^a-z0-9]+/gi, "-");
+  const ts = \`
+import { Component } from '@angular/core';
 
-   const kebab = normalize(page.name.toLowerCase());
+@Component({
+  selector: 'app-\${kebab}',
+  standalone: true,
+  templateUrl: './\${kebab}.component.html',
+  styleUrls: ['./\${kebab}.component.css']
+})
+export class \${className} { }
+\`.trim();
 
-    const className = page.name
-      .split(/\\s+/g)
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join('') + 'Component';
-    const pathStr = i === 0 ? "''" : \`'\${kebab}'\`;
-    return \`  { path: \${pathStr}, component: \${className} },\`;
-  }).join('\\n');
+  await Promise.all([
+    fs.writeFile(path.join(pageDir, \`\${kebab}.component.ts\`), ts),
+    fs.writeFile(path.join(pageDir, \`\${kebab}.component.html\`), page.html.trim()),
+    fs.writeFile(path.join(pageDir, \`\${kebab}.component.css\`), page.css.trim()),
+  ]);
+}
 
-  const routesFileContent = \`// Este archivo es generado automáticamente
-\${imports}  // Incluir los imports generados
+async function generateRoutes(appName, pages) {
+  const routesFile = path.join(appName, "src/app/app.routes.ts");
+  const imports = pages
+    .map((p) => {
+      const sanitized = sanitizeName(p.name);
+      const kebab = kebabCase(sanitized);
+      const className = pascalCase(sanitized) + "Component";
+      return \`import { \${className} } from './pages/\${kebab}/\${kebab}.component';\`;
+    })
+    .join("\\n");
+
+  const routes = pages
+    .map((p, i) => {
+      const sanitized = sanitizeName(p.name);
+      const kebab = kebabCase(sanitized);
+      const className = pascalCase(sanitized) + "Component";
+      return \`  { path: \${i === 0 ? \`''\` : \`'\${kebab}'\`}, component: \${className} },\`;
+    })
+    .join("\\n");
+
+  const fileContent = \`// AUTO-GENERATED FILE
+\${imports}
 
 export const routes = [
-\${routes}  // Incluir las rutas generadas
-  { path: '**', redirectTo: '' }  // Ruta de fallback
-];
-\`;
+\${routes}
+  { path: '**', redirectTo: '' }
+];\`;
 
-  fs.writeFileSync(
-    path.join(appName, 'src/app/app.routes.ts'),
-    routesFileContent,
-    'utf-8'
-  );
-  console.log('✅ app.routes.ts generado dinámicamente');
-})();
+  await fs.writeFile(routesFile, fileContent);
+}
 
-// 4.5) Sobreescribir app.component.html con <router-outlet> y menú
-(() => {
-  const navLinks = project.pages.map((page, i) => {
-  const normalize = (str) =>
-  str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n").replace(/[^a-z0-9]+/gi, "-");
+async function updateAppComponent(appName, pages) {
+  const html = \`
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>📁 Navegación</h2>
+      <ul>
+        \${pages
+          .map((p) => {
+            const sanitized = sanitizeName(p.name);
+            const kebab = kebabCase(sanitized);
+            return \`<li><a routerLink="/\${kebab}" routerLinkActive="active">\${p.name}</a></li>\`;
+          })
+          .join("\\n")}
+      </ul>
+    </aside>
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>\`.trim();
 
-    const kebab = normalize(page.name.toLowerCase());
-
-    const label = page.name;
-    const link = i === 0 ? '/' : '/' + kebab;
-    return \`<a routerLink="\${link}">\${label}</a>\`;
-  }).join(' | ');
-
-  const appCompHtml = \`<nav>\${navLinks}</nav>
-<hr/>
-<router-outlet></router-outlet>\`;
-
-const appCompTs = \`
-
+  const ts = \`
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';  // Importamos RouterModule aquí
-import { routes } from './app.routes';  // Importa las rutas definidas
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  standalone: true,  // Este es un componente standalone
-  imports: [RouterModule],  // Aquí agregamos RouterModule dinámicamente
+  standalone: true,
+  imports: [RouterModule],
   templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
-export class AppComponent {}
-  \`;
+export class AppComponent { }\`.trim();
 
-  fs.writeFileSync(
-    path.join(appName, 'src/app/app.component.ts'),
-    appCompTs,
-    'utf-8'
-  );
+  const css = \`
+.layout {
+  display: flex;
+  height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-  fs.writeFileSync(
-    path.join(appName, 'src/app/app.component.html'),
-    appCompHtml,
-    'utf-8'
-  );
-  console.log('✅ app.component.html actualizado con <router-outlet>');
-})();
+.sidebar {
+  width: 260px;
+  background: #1f2937;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-// 5) Instalar dependencias
-console.log('📦 npm install');
-execSync('npm install', { cwd: appName, stdio: 'inherit' });
+.sidebar h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: #60a5fa;
+  text-align: center;
+}
 
-console.log('🎉 ¡Todo listo! Ahora entra en ' + appName + ' y ejecuta:');
-console.log('    npm start');
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin: 10px 0;
+}
+
+.sidebar a {
+  display: block;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #cbd5e1;
+  transition: background 0.3s, color 0.3s;
+}
+
+.sidebar a:hover {
+  background: #374151;
+  color: #fff;
+}
+
+.sidebar a.active {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  background: #f9fafb;
+  padding: 40px;
+  overflow-y: auto;
+}\`.trim();
+
+  await Promise.all([
+    fs.writeFile(path.join(appName, "src/app/app.component.html"), html),
+    fs.writeFile(path.join(appName, "src/app/app.component.ts"), ts),
+    fs.writeFile(path.join(appName, "src/app/app.component.css"), css),
+  ]);
+}
+
+async function waitForFile(filePath, retries = 10, interval = 500) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await fs.access(filePath);
+      return;
+    } catch {
+      await new Promise((res) => setTimeout(res, interval));
+    }
+  }
+  throw new Error(\`Timeout esperando el archivo: \${filePath}\`);
+}
+
+async function main() {
+  const appName = path.basename(__filename, ".js");
+  if (!appName) return console.error("❌ Nombre inválido de proyecto.");
+
+  await generateAngularProject(appName);
+  const pages = await extractPagesFromJson(appName);
+
+  for (const page of pages) {
+    console.log("🛠️  Generando componente para:", page.name);
+    await createComponentFromPage(appName, page);
+  }
+
+  await generateRoutes(appName, pages);
+  await updateAppComponent(appName, pages);
+
+  console.log("⏳ Esperando que se genere package.json...");
+  await waitForFile(path.join(appName, "package.json"));
+
+  console.log("📦 Instalando dependencias...");
+  await execCmd("npm install", { cwd: appName });
+
+  console.log(\`✅ Proyecto listo. Ejecuta:
+cd \${appName} && npm start\`);
+}
+
+main().catch((err) => {
+  console.error("❌ Error:", err);
+  process.exit(1);
+});
 `;
+
   zip.file(`${projectName}.js`, scriptContent, { unixPermissions: "755" });
 
   const readme = `
