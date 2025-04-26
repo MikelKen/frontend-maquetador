@@ -1,14 +1,17 @@
 "use client";
 import React from "react";
 import { SignUpForm } from "./RegisterForm";
+import BackgroundLayout from "@/components/BackgroundLayout";
 
 function SignUp() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
-      <div className="w-full max-w-sm md:max-w-3xl">
-        <SignUpForm />
+    <BackgroundLayout>
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="w-full max-w-3xl">
+          <SignUpForm />
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

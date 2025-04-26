@@ -14,14 +14,13 @@ interface User {
 }
 
 interface Props {
-  // onExport: () => void;
-  // onLogData: () => void;
   onShare: () => void;
   users: User[];
   editor?: Editor;
 }
 
 function Navbar({ users, editor }: Props) {
+  console.log("Users de navbar", users);
   return (
     <motion.header
       initial={{ y: -60, opacity: 0 }}

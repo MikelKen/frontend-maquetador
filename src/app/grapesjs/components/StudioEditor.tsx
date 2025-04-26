@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import createStudioEditor from "@grapesjs/studio-sdk";
 import {
   flexComponent,
@@ -14,11 +14,38 @@ import {
 } from "@grapesjs/studio-sdk-plugins";
 import "@grapesjs/studio-sdk/style";
 import type { Editor } from "@grapesjs/studio-sdk/dist/typeConfigs/gjsExtend.js";
+import { Socket } from "socket.io-client";
 
 type Props = {
   onEditorReady?: (editor: Editor) => void;
+  roomId: string;
+  userId: string;
+  socket: Socket;
 };
-const StudioEditorComponent = ({ onEditorReady }: Props) => {
+
+type CursorPosition = {
+  userId: string;
+  username: string;
+  x: number;
+  y: number;
+  timestamp: number;
+};
+const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props) => {
+  const [editor, setEditor] = useState<Editor | null>(null);
+  // const [socket, setSocket] = useState<Socket | null>(null);
+  const isProcessingRemoteChanges = useRef(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Inicializando la conexión Socket.IO
+  // useEffect(() => {
+  //   if (!roomId || !userId) return;
+  //   const socket = socketService.connect(roomId, userId);
+  //   setSocket(socket);
+  //   return () => {
+  //     socketService.disconnect();
+  //   };
+  // }, [roomId, userId]);
+
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisitedGrapesEditor");
 
@@ -72,7 +99,7 @@ const StudioEditorComponent = ({ onEditorReady }: Props) => {
       },
       project: {
         type: "web",
-        id: "UNIQUE_PROJECT_ID",
+        id: roomId,
         default: {
           pages: [
             {
@@ -87,7 +114,7 @@ const StudioEditorComponent = ({ onEditorReady }: Props) => {
         },
       },
       identity: {
-        id: "UNIQUE_END_USER_ID",
+        id: userId,
       },
       assets: {
         storageType: "cloud",
@@ -108,10 +135,187 @@ const StudioEditorComponent = ({ onEditorReady }: Props) => {
         lightGalleryComponent.init({}),
       ],
       onEditor(editor: Editor) {
+        setEditor(editor);
         onEditorReady?.(editor);
       },
     });
-  }, [onEditorReady]);
+  }, [onEditorReady, roomId, userId]);
+
+  // Colaboracion en tiempo real
+  useEffect(() => {
+    if (!editor || !socket) return;
+    socket.emit("get-initial-state", roomId);
+    const handleInitialState = (initialState: unknown) => {
+      if (isInitialLoad && initialState) {
+        try {
+          isProcessingRemoteChanges.current = true;
+          editor.loadProjectData(initialState);
+          console.log("Estado inicial cargado correctamente");
+          setTimeout(() => {
+            isProcessingRemoteChanges.current = false;
+          }, 500);
+        } catch (error) {
+          console.error("Error al cargar el estado inicial:", error);
+          isProcessingRemoteChanges.current = false;
+        }
+        setIsInitialLoad(false);
+      }
+    };
+
+    const handleCursorPosition = (cursorData: CursorPosition) => {
+      if (cursorData.userId === userId) return;
+      updateRemoteCursor(cursorData);
+    };
+
+    socket.on("initial-state", handleInitialState);
+    socket.on("cursor-position", handleCursorPosition);
+    // Rastrear posición del ratón para cursores colaborativos
+    const canvas = editor.Canvas.getElement();
+
+    if (canvas) {
+      let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
+
+      canvas.addEventListener("mousemove", (event) => {
+        // Throttle para evitar demasiados eventos
+        if (throttleTimeout) return;
+
+        throttleTimeout = setTimeout(() => {
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+
+          socket.emit("cursor-position", {
+            userId,
+            username: `Usuario-${userId.substring(0, 5)}`,
+            x,
+            y,
+            timestamp: Date.now(),
+          });
+
+          throttleTimeout = null;
+        }, 50);
+      });
+    }
+    const setupStateCapture = () => {
+      // Cada 10 segundos, guardar el estado completo del proyecto
+      const intervalId = setInterval(() => {
+        if (editor && !isProcessingRemoteChanges.current) {
+          try {
+            const projectState = editor.getProjectData();
+            socket.emit("save-project-state", {
+              roomId,
+              state: projectState,
+              timestamp: Date.now(),
+            });
+          } catch (error) {
+            console.error("Error al guardar el estado del proyecto:", error);
+          }
+        }
+      }, 10000);
+
+      return () => clearInterval(intervalId);
+    };
+    const cleanupStateCapture = setupStateCapture();
+    return () => {
+      if (editor) {
+        if (canvas) {
+          canvas.removeEventListener("mousemove", () => {});
+        }
+      }
+      if (socket) {
+        socket.off("cursor-position", handleCursorPosition);
+      }
+      cleanupStateCapture();
+    };
+  }, [editor, socket, userId, roomId, isInitialLoad]);
+
+  // // Funcion para mostrar los cursores remotos
+  const updateRemoteCursor = useCallback(
+    (cursorData: CursorPosition) => {
+      if (!editor) return;
+
+      const canvas = editor.Canvas.getElement();
+      if (!canvas) return;
+
+      let cursorElement = document.getElementById(`cursor-${cursorData.userId}`);
+
+      if (!cursorElement) {
+        cursorElement = document.createElement("div");
+        cursorElement.id = `cursor-${cursorData.userId}`;
+        cursorElement.className = "remote-cursor";
+
+        // Generar un color aleatorio pero consistente para este usuario
+        const userColor = generateColorFromString(cursorData.userId);
+
+        cursorElement.innerHTML = `
+        <div class="cursor-pointer" style="background-color: ${userColor};"></div>
+        <div class="cursor-label" style="background-color: ${userColor};">${cursorData.username}</div>
+      `;
+        cursorElement.style.position = "absolute";
+        cursorElement.style.pointerEvents = "none";
+        cursorElement.style.zIndex = "999";
+        canvas.appendChild(cursorElement);
+
+        if (!document.getElementById("remote-cursor-styles")) {
+          const style = document.createElement("style");
+          style.id = "remote-cursor-styles";
+          style.textContent = `
+          .remote-cursor {
+            transition: transform 0.1s ease-out;
+            pointer-events: none;
+          }
+          .cursor-pointer {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+          }
+          .cursor-label {
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 5px;
+            transform: translateY(-50%);
+            display: inline-block;
+          }
+        `;
+          document.head.appendChild(style);
+        }
+      }
+
+      // Actualizar posición del cursor
+      cursorElement.style.transform = `translate(${cursorData.x}px, ${cursorData.y}px)`;
+
+      // Auto-eliminar cursor después de inactividad
+      if (!window.cursorTimeouts) {
+        window.cursorTimeouts = {};
+      }
+
+      if (window.cursorTimeouts[cursorData.userId]) {
+        clearTimeout(window.cursorTimeouts[cursorData.userId]);
+      }
+
+      window.cursorTimeouts[cursorData.userId] = setTimeout(() => {
+        if (cursorElement && cursorElement.parentNode) {
+          cursorElement.parentNode.removeChild(cursorElement);
+        }
+      }, 5000);
+    },
+    [editor]
+  );
+  const generateColorFromString = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = "#";
+    for (let i = 0; i < 3; i++) {
+      const value = (hash >> (i * 8)) & 0xff;
+      color += ("00" + value.toString(16)).substr(-2);
+    }
+    return color;
+  };
 
   return <div id="studio-editor" style={{ width: "100%", height: "100vh" }} />;
 };

@@ -1,40 +1,28 @@
-// import { useEffect, useRef } from "react";
-// import { io, Socket } from "socket.io-client";
+import { useEffect, useState } from "react";
+import { connectSocket, disconnectSocket } from "./serviceSocket";
+import { Socket } from "socket.io-client";
 
-import { useEffect, useMemo } from "react";
-import { io, Socket } from "socket.io-client";
-
-// export default function useSocket() {
-//   const socketRef = useRef<Socket | null>(null);
-
-//   const userName = useRef("User-" + Math.floor(Math.random() * 1000));
-//   const userColor = useRef("#" + ((Math.random() * 0xffffff) | 0).toString(16));
-
-//   useEffect(() => {
-//     socketRef.current = io("http://localhost:4000", {
-//       transports: ["websocket"],
-//       path: "/socket.io",
-//     });
-//     return () => {
-//       socketRef.current?.disconnect();
-//     };
-//   }, []);
-//   return { socketRef, userName: userName.current, userColor: userColor.current };
-// }
-
-export default function useSocket(roomId: string) {
-  const socket = useMemo<Socket>(
-    () =>
-      io("http://localhost:4000/grapes", {
-        query: { room: roomId },
-      }),
-    [roomId]
-  );
+export default function useSocket(roomId: string, userId: string) {
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
+    if (!roomId || !userId) return;
+
+    const userName = "User-" + Math.floor(Math.random() * 1000);
+    const userColor = "#" + ((Math.random() * 0xffffff) | 0).toString(16);
+
+    const newSocket = connectSocket({
+      roomId,
+      userId,
+      userName,
+      userColor,
+    });
+    setSocket(newSocket);
+
     return () => {
-      socket.disconnect();
+      disconnectSocket();
     };
-  }, [socket]);
+  }, [roomId, userId]);
+
   return socket;
 }

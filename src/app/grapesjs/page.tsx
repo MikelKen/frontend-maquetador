@@ -1,21 +1,17 @@
+// app/prueba/page.tsx
 "use client";
-import React, { useState } from "react";
-import StudioEditorComponent from "./components/StudioEditor";
-import Navbar from "@/components/Navbar";
-import type { Editor } from "grapesjs";
 
-function GrapesJsPage() {
-  const [editor, setEditor] = useState<Editor>();
-  const handleShare = () => {
-    console.log("Compartir proyecto");
-  };
-  return (
-    <main>
-      <Navbar onShare={handleShare} users={[]} editor={editor} />
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
-      <StudioEditorComponent onEditorReady={setEditor} />
-    </main>
-  );
+export default function RedirectToRoom() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const newRoomId = uuidv4();
+    router.replace(`/grapesjs/${newRoomId}`);
+  }, [router]);
+
+  return <p>Redireccionando a nueva sala...</p>;
 }
-
-export default GrapesJsPage;

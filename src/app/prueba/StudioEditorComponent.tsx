@@ -75,8 +75,7 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
       alert("👋 ¡Bienvenido/a al editor colaborativo! Ahora puedes diseñar en tiempo real con otros usuarios.");
       localStorage.setItem("hasVisitedGrapesEditor", "true");
     }
-
-    const editorInstance = createStudioEditor({
+    createStudioEditor({
       root: "#studio-editor",
       licenseKey: "c2240ba690d1463fa178fa79c4b4d757e433249c56ec4fb4ac9c0a98ab295070",
       theme: "light",
@@ -118,10 +117,10 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
         id: userId,
       },
       assets: {
-        storageType: "local",
+        storageType: "cloud",
       },
       storage: {
-        type: "local",
+        type: "cloud",
         autosaveChanges: 100,
         autosaveIntervalMs: 30000,
       },
@@ -501,7 +500,7 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
 
     socket.emit("get-initial-state", roomId);
 
-    const handleInitialState = (initialState) => {
+    const handleInitialState = (initialState: any) => {
       if (isInitialLoad && initialState) {
         try {
           isProcessingRemoteChanges.current = true;
@@ -522,7 +521,10 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
     const handleComponentChange = (change: ComponentChange) => {
       if (change.userId === userId) return;
       const lastChangeTime = lastChangeRef.current[`${change.type}-${change.id}`] || 0;
-      if (change.timestamp <= lastChangeTime) return;
+      if (change.timestamp <= lastChangeTime) {
+        console.log("Ignorando cambio obsoleto o duplicado");
+        return;
+      }
 
       lastChangeRef.current[`${change.type}-${change.id}`] = change.timestamp;
 
@@ -546,7 +548,9 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
     const processPendingChanges = () => {
       if (pendingChanges.current.length > 0) {
         pendingChanges.current.sort((a, b) => a.timestamp - b.timestamp);
-        pendingChanges.current.forEach(applyComponentChange);
+        pendingChanges.current.forEach((change) => {
+          applyComponentChange(change);
+        });
         pendingChanges.current = [];
       }
     };
@@ -591,16 +595,29 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
 
           case "update":
             if (component) {
-              if (change.data.attributes) component.setAttributes(change.data.attributes);
-              if (change.data.content !== undefined) component.set("content", change.data.content);
-              if (change.data.style) component.setStyle(change.data.style);
+              // Actualizar atributos si es necesario
+              if (change.data.attributes) {
+                component.setAttributes(change.data.attributes);
+              }
+
+              // Actualizar contenido si se proporciona
+              if (change.data.content !== undefined) {
+                component.set("content", change.data.content);
+              }
+
+              // Actualizar estilo si se proporciona
+              if (change.data.style) {
+                component.setStyle(change.data.style);
+              }
             }
             break;
-
           case "move":
             if (component && change.data.parent) {
               const newParent = componentsManager.getById(change.data.parent);
-              if (newParent) component.move(newParent, { at: change.data.index || 0 });
+              if (newParent) {
+                // Mover el componente al nuevo padre en la posición indicada
+                component.move(newParent, { at: change.data.index || 0 });
+              }
             }
             break;
         }
@@ -711,56 +728,108 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId }: Props) => {
     editor.on("component:styleUpdate", onStyleUpdate);
     editor.on("component:move", onMove);
 
+    // Rastrear posición del ratón para cursores colaborativos
     const canvas = editor.Canvas.getElement();
-    const onMouseMove = (event: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      socket.emit("cursor-position", {
-        userId,
-        username: `Usuario-${userId.substring(0, 5)}`,
-        x,
-        y,
-        timestamp: Date.now(),
-      });
-    };
 
     if (canvas) {
-      canvas.addEventListener("mousemove", onMouseMove);
-    }
+      let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const intervalId = setInterval(() => {
-      if (editor && !isProcessingRemoteChanges.current) {
-        try {
-          const projectState = editor.getProjectData();
-          socket.emit("save-project-state", {
-            roomId,
-            state: projectState,
+      canvas.addEventListener("mousemove", (event) => {
+        // Throttle para evitar demasiados eventos
+        if (throttleTimeout) return;
+
+        throttleTimeout = setTimeout(() => {
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+
+          socket.emit("cursor-position", {
+            userId,
+            username: `Usuario-${userId.substring(0, 5)}`,
+            x,
+            y,
             timestamp: Date.now(),
           });
-        } catch (error) {
-          console.error("Error al guardar el estado del proyecto:", error);
+
+          throttleTimeout = null;
+        }, 50);
+      });
+    }
+    // const onMouseMove = (event: MouseEvent) => {
+    //   const rect = canvas.getBoundingClientRect();
+    //   const x = event.clientX - rect.left;
+    //   const y = event.clientY - rect.top;
+
+    //   socket.emit("cursor-position", {
+    //     userId,
+    //     username: `Usuario-${userId.substring(0, 5)}`,
+    //     x,
+    //     y,
+    //     timestamp: Date.now(),
+    //   });
+    // };
+
+    // if (canvas) {
+    //   canvas.addEventListener("mousemove", onMouseMove);
+    // }
+
+    // const intervalId = setInterval(() => {
+    //   if (editor && !isProcessingRemoteChanges.current) {
+    //     try {
+    //       const projectState = editor.getProjectData();
+    //       socket.emit("save-project-state", {
+    //         roomId,
+    //         state: projectState,
+    //         timestamp: Date.now(),
+    //       });
+    //     } catch (error) {
+    //       console.error("Error al guardar el estado del proyecto:", error);
+    //     }
+    //   }
+    // }, 10000);
+
+    //   // Configurar captura periódica del estado completo
+    const setupStateCapture = () => {
+      // Cada 10 segundos, guardar el estado completo del proyecto
+      const intervalId = setInterval(() => {
+        if (editor && !isProcessingRemoteChanges.current) {
+          try {
+            const projectState = editor.getProjectData();
+            socket.emit("save-project-state", {
+              roomId,
+              state: projectState,
+              timestamp: Date.now(),
+            });
+          } catch (error) {
+            console.error("Error al guardar el estado del proyecto:", error);
+          }
+        }
+      }, 10000);
+
+      return () => clearInterval(intervalId);
+    };
+
+    const cleanupStateCapture = setupStateCapture();
+    return () => {
+      if (editor) {
+        editor.off("component:add", onAdd);
+        editor.off("component:remove", onRemove);
+        editor.off("component:update", onUpdate);
+        editor.off("component:styleUpdate", onStyleUpdate);
+        editor.off("component:move", onMove);
+
+        if (canvas) {
+          canvas.removeEventListener("mousemove", () => {});
         }
       }
-    }, 10000);
 
-    return () => {
-      editor.off("component:add", onAdd);
-      editor.off("component:remove", onRemove);
-      editor.off("component:update", onUpdate);
-      editor.off("component:styleUpdate", onStyleUpdate);
-      editor.off("component:move", onMove);
-
-      if (canvas) {
-        canvas.removeEventListener("mousemove", onMouseMove);
+      if (socket) {
+        socket.off("component-change", handleComponentChange);
+        socket.off("cursor-position", handleCursorPosition);
+        socket.off("initial-state", handleInitialState);
       }
 
-      socket.off("component-change", handleComponentChange);
-      socket.off("cursor-position", handleCursorPosition);
-      socket.off("initial-state", handleInitialState);
-
-      clearInterval(intervalId);
+      cleanupStateCapture();
     };
   }, [editor, socket, userId, roomId, isInitialLoad]);
 

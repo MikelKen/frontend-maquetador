@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Work_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
 
 const workSans = Work_Sans({
@@ -20,9 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      {/* <body className={`${workSans.variable} ${workSans.variable} antialiased`}>{children}</body> */}
-      <body className={cn("main-h-screen bg-background work-sans antialiased", workSans.variable)}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", workSans.variable)}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

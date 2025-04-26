@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth_store";
 import { API_ROUTES } from "@/lib/api.routes";
+import Image from "next/image";
 
 export function SignUpForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
@@ -51,6 +52,7 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
       alert("Ocurrion un error");
     }
   };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
@@ -143,9 +145,11 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
             </div>
           </form>
           <div className="bg-muted relative hidden md:block">
-            <img
+            <Image
               src="/assets/image3.jpg"
               alt="Image"
+              width={100}
+              height={100}
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>

@@ -9,6 +9,7 @@ import { useAuthStore } from "@/lib/useAuthStore";
 import { useState } from "react";
 import { API_ROUTES } from "@/lib/api.routes";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
@@ -40,7 +41,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       if (response.ok && data.shareId) {
         alert("Proyecto creado exitosamente");
         router.push(`/grapesjs/${data.shareId}`);
-        // router.push(`/project`);
       } else {
         alert("Error al crear proyecto");
       }
@@ -129,18 +129,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               </div>
             </div>
           </form>
-          <div className="bg-muted relative hidden md:block">
-            <img
-              src="../../assets/image3.jpg"
+          <div className="relative hidden md:block overflow-hidden rounded-md">
+            <Image
+              src="/assets/image3.jpg"
               alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              width={1000}
+              height={1000}
+              className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
         </CardContent>
       </Card>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-      </div>
     </div>
   );
 }
