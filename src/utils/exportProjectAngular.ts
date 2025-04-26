@@ -278,20 +278,23 @@ main().catch((err) => {
   zip.file(`${projectName}.js`, scriptContent, { unixPermissions: "755" });
 
   const readme = `
-# Instrucciones de generación
+# 🚀 Cómo generar el proyecto Angular
 
-1. Descomprime este ZIP.
-2. Abre terminal en la carpeta resultante.
+1. **Descomprime** el archivo ZIP exportado.
+2. **Abre una terminal** en la carpeta donde descomprimiste el archivo.
 3. Ejecuta:
    \`\`\`
    node \`\${projectName}.js\`
    \`\`\`
-4. Entra en la carpeta creada:
+4. Cuando termine, entra a la carpeta del proyecto:
    \`\`\`
    cd \`\${projectName}\`
-   npm start
    \`\`\`
-
+5. Iniciá el servidor:
+   \`\`\`
+   npm run start
+   \`\`\`
+6. Abre el navegador en [http://localhost:4200](http://localhost:4200)
 > **Requisitos**: Node.js y conexión a Internet.
 `;
   zip.file("README.txt", readme.trim());
