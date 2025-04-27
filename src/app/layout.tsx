@@ -3,6 +3,7 @@ import { Work_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -23,7 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", workSans.variable)}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

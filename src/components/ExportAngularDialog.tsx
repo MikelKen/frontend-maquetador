@@ -14,15 +14,18 @@ import { Label } from "@/components/ui/label";
 import { Download } from "lucide-react";
 import { ExportProjectAngular } from "@/utils/exportProjectAngular";
 import type { Editor } from "grapesjs";
+import { ExportXmlAngular } from "@/utils/exportXMLAngular";
 
-function ExportAngularDialog({ editor }: { editor?: Editor }) {
+function ExportAngularDialog({ editor, xmlFile }: { editor?: Editor; xmlFile?: File }) {
   const [projectName, setProjectName] = useState<string>("export_angular");
 
   const handleProjectExport = () => {
-    console.log("hizo click editor", editor);
     if (!editor) return;
-    console.log("hizo click");
-    ExportProjectAngular(editor, projectName.trim());
+    if (xmlFile) {
+      ExportXmlAngular(xmlFile, projectName);
+    } else {
+      ExportProjectAngular(editor, projectName.trim());
+    }
   };
   return (
     <Dialog>
@@ -32,22 +35,22 @@ function ExportAngularDialog({ editor }: { editor?: Editor }) {
           className="text-cyan-500 border-cyan-500 hover:bg-cyan-500 hover:text-white transition-all"
         >
           <Download size={16} />
-          Exportar Proyecto
+          Export project
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-2xl bg-[#0f172a] text-cyan-100 border border-cyan-700 rounded-xl shadow-2xl px-8 py-6 !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2">
         <DialogHeader>
-          <DialogTitle className="text-cyan-400">Exportar en proyecto Angular</DialogTitle>
+          <DialogTitle className="text-cyan-400">Export in Angular project</DialogTitle>
           <DialogDescription className="text-cyan-200">
-            Genera un proyecto Angular con tus páginas diseñadas.
+            Generate an Angular project with your designed pages.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-2 items-center gap-4">
             <Label htmlFor="name" className="text-right text-cyan-300">
-              Nombre del Proyecto
+              Project Name
             </Label>
             <Input
               id="name"
@@ -60,7 +63,7 @@ function ExportAngularDialog({ editor }: { editor?: Editor }) {
         </div>
         <DialogFooter>
           <Button type="button" className="bg-cyan-600 hover:bg-cyan-700" onClick={handleProjectExport}>
-            Exportar
+            Export
           </Button>
         </DialogFooter>
       </DialogContent>

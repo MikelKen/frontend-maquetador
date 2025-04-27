@@ -2,12 +2,10 @@ import JSZip from "jszip";
 import * as FileSaver from "file-saver";
 import { ParsedClass, ParseModelXml } from "@/lib/xmlParser";
 
-export async function ExportXmlAngular(xmlFile: File, projectName = "xml-model-angular-project") {
+export async function ExportXmlAngular(xmlFile: File, projectName: string = "xml-model-angular-project") {
   if (!xmlFile) return;
   const xmlText = await xmlFile.text();
   const clases: ParsedClass[] = await ParseModelXml(xmlText);
-
-  console.log(clases);
 
   const zip = new JSZip();
   zip.file("model.json", JSON.stringify(clases, null, 2));
@@ -351,5 +349,5 @@ main().catch((err) => {
   zip.file("README.txt", readme.trim());
 
   const blob = await zip.generateAsync({ type: "blob" });
-  FileSaver.saveAs(blob, `${projectName}-bootstrap.zip`);
+  FileSaver.saveAs(blob, `${projectName}.zip`);
 }

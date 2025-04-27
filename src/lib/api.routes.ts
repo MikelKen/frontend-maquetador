@@ -4,11 +4,6 @@ export const API_ROUTES = {
   SIGN_UP: {
     url: `${API_URL}/auth/register`,
     method: "POST",
-    // body: {
-    //     name: "",
-    //     email: "",
-    //     password: "",
-    // }
   },
   SIGN_IN: {
     url: `${API_URL}/auth/login`,

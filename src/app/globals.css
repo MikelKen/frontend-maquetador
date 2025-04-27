@@ -127,6 +127,29 @@
   }
 }
 
+@layer utilities {
+  .bg-grid-pattern {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: 0 0;
+  }
+
+  .animate-move-grid {
+    animation: moveGrid 20s linear infinite;
+  }
+}
+
+/* KEYFRAME PARA MOVER EL GRID */
+@keyframes moveGrid {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
+}
+
 .home-page {
   background-color: #050505;
   color: var(--text);

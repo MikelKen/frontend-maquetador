@@ -92,6 +92,11 @@ export default function Home() {
     router.push("/auth/sign-in");
   };
 
+  const handleSignUp = () => {
+    console.log("Signing up..");
+    router.push("/auth/sign-up");
+  };
+
   return (
     <div className="home-page">
       <div className="body">
@@ -103,14 +108,14 @@ export default function Home() {
           <nav>
             <div className="logo">
               <div className="logo-icon"></div>
-              <span>NEBULA</span>
+              <span>ASOCIAL¨</span>
             </div>
 
             <div className="nav-buttons">
               <button className="btn-outline" onClick={handleSignIn}>
                 Sign In
               </button>
-              <button className="btn-primary" onClick={() => router.push("/auth/sign-up")}>
+              <button className="btn-primary" onClick={handleSignUp}>
                 Sign Up
               </button>
             </div>
@@ -122,13 +127,14 @@ export default function Home() {
                 Drag & Drop <span className="highlight">Interface</span> Designer
               </h1>
               <p className="subtitle">
-                Build stunning web apps in minutes with real-time collaboration and automatic code generation. No coding
-                skills required.
+                Building stunning web applications in minutes with automatic code generation and collaboration with your
+                team. No programming skills required.
               </p>
 
               <div className="cta-buttons">
-                <button className="btn-primary">Start Now</button>
-                <button className="btn-accent">See Demo</button>
+                <button className="btn-primary" onClick={handleSignIn}>
+                  Start Now
+                </button>
               </div>
             </div>
 
