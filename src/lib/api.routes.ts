@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:3000/api";
+export const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 export const API_ROUTES = {
   SIGN_UP: {

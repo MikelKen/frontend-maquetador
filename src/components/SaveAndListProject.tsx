@@ -28,7 +28,6 @@ function SaveAndListProject() {
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareIdToDelete, setShareIdToDelete] = useState<string | null>(null);
-  const [projectNameToDelete, setProjectNameToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -100,9 +99,9 @@ function SaveAndListProject() {
     }
   };
 
-  const askDeleteProject = (shareId: string, projectName: string) => {
+  const askDeleteProject = (shareId: string) => {
     setShareIdToDelete(shareId);
-    setProjectNameToDelete(projectName);
+
     setDeleteDialogOpen(true);
   };
 
@@ -190,7 +189,7 @@ function SaveAndListProject() {
 
               <ListTableProjects
                 projects={projects}
-                onDelete={(shareId, name) => askDeleteProject(shareId, name)}
+                onDelete={(shareId) => askDeleteProject(shareId)}
                 onEdit={fetchProjects}
               />
             </div>
