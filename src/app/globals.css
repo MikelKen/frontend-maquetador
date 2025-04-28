@@ -757,3 +757,34 @@
     }
   }
 }
+
+.toast-custom {
+  font-family: "Inter", sans-serif;
+  animation: toast-slide-in 0.4s ease, toast-slide-out 0.4s ease;
+  font-size: 14px;
+  will-change: transform, opacity;
+}
+
+/* Entrada */
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Salida */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+}

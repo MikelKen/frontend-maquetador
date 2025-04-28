@@ -15,6 +15,7 @@ import {
 import "@grapesjs/studio-sdk/style";
 import type { Editor } from "@grapesjs/studio-sdk/dist/typeConfigs/gjsExtend.js";
 import { Socket } from "socket.io-client";
+import { generateColorFromString } from "@/utils/generateColorFromString";
 
 type Props = {
   onEditorReady?: (editor: Editor) => void;
@@ -22,7 +23,6 @@ type Props = {
   userId: string;
   socket: Socket;
 };
-
 type CursorPosition = {
   userId: string;
   username: string;
@@ -30,21 +30,18 @@ type CursorPosition = {
   y: number;
   timestamp: number;
 };
+
+declare global {
+  interface Window {
+    cursorTimeouts: Record<string, ReturnType<typeof setTimeout>>;
+  }
+}
+
 const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props) => {
   const [editor, setEditor] = useState<Editor | null>(null);
-  // const [socket, setSocket] = useState<Socket | null>(null);
+
   const isProcessingRemoteChanges = useRef(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Inicializando la conexión Socket.IO
-  // useEffect(() => {
-  //   if (!roomId || !userId) return;
-  //   const socket = socketService.connect(roomId, userId);
-  //   setSocket(socket);
-  //   return () => {
-  //     socketService.disconnect();
-  //   };
-  // }, [roomId, userId]);
 
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisitedGrapesEditor");
@@ -197,7 +194,6 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
       });
     }
     const setupStateCapture = () => {
-      // Cada 10 segundos, guardar el estado completo del proyecto
       const intervalId = setInterval(() => {
         if (editor && !isProcessingRemoteChanges.current) {
           try {
@@ -244,13 +240,12 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
         cursorElement.id = `cursor-${cursorData.userId}`;
         cursorElement.className = "remote-cursor";
 
-        // Generar un color aleatorio pero consistente para este usuario
         const userColor = generateColorFromString(cursorData.userId);
 
         cursorElement.innerHTML = `
-        <div class="cursor-pointer" style="background-color: ${userColor};"></div>
-        <div class="cursor-label" style="background-color: ${userColor};">${cursorData.username}</div>
-      `;
+          <div class="cursor-pointer" style="border-left-color: ${userColor};"></div>
+          <div class="cursor-label" style="background-color: ${userColor};">${cursorData.username}</div>
+        `;
         cursorElement.style.position = "absolute";
         cursorElement.style.pointerEvents = "none";
         cursorElement.style.zIndex = "999";
@@ -260,26 +255,32 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
           const style = document.createElement("style");
           style.id = "remote-cursor-styles";
           style.textContent = `
-          .remote-cursor {
-            transition: transform 0.1s ease-out;
-            pointer-events: none;
-          }
-          .cursor-pointer {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-          }
-          .cursor-label {
-            color: white;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 12px;
-            margin-left: 5px;
-            transform: translateY(-50%);
-            display: inline-block;
-          }
-        `;
+            .remote-cursor {
+              transition: transform 0.12s ease-out;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+            }
+            .cursor-pointer {
+              width: 0;
+              height: 0;
+              border-left: 10px solid;
+              border-top: 6px solid transparent;
+              border-bottom: 6px solid transparent;
+              transform: translate(-50%, -50%) rotate(-20deg);
+            }
+            .cursor-label {
+              color: white;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 12px;
+              margin-left: 8px;
+              transform: translateY(-50%);
+              display: inline-block;
+              white-space: nowrap;
+              font-weight: 500;
+            }
+          `;
           document.head.appendChild(style);
         }
       }
@@ -304,18 +305,6 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
     },
     [editor]
   );
-  const generateColorFromString = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    let color = "#";
-    for (let i = 0; i < 3; i++) {
-      const value = (hash >> (i * 8)) & 0xff;
-      color += ("00" + value.toString(16)).substr(-2);
-    }
-    return color;
-  };
 
   return <div id="studio-editor" style={{ width: "100%", height: "100vh" }} />;
 };

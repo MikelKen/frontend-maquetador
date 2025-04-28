@@ -1,5 +1,7 @@
+// auth_store.ts
 import { create } from "zustand";
 import { API_ROUTES } from "./api.routes";
+
 interface User {
   id: number;
   name: string;
@@ -12,9 +14,11 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
+  registerSuccessMessage: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
+  setRegisterSuccessMessage: (msg: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -22,6 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
   error: null,
+  registerSuccessMessage: null,
 
   login: async (email: string, password: string) => {
     set({ loading: true, error: null });
@@ -41,7 +46,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const data = await response.json();
       localStorage.setItem("token", data.token);
-      console.log("===========", data);
+
       set({
         isAuthenticated: true,
         user: data.user,
@@ -58,7 +63,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem("token");
     set({ isAuthenticated: false, user: null });
   },
+
   setUser: (user) => {
     set({ user, isAuthenticated: !!user });
+  },
+
+  setRegisterSuccessMessage: (msg) => {
+    set({ registerSuccessMessage: msg });
   },
 }));

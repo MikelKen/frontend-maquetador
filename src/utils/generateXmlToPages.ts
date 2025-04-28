@@ -85,9 +85,8 @@ export async function GenerateXmlToPages(xmlFile: File, editor: Editor) {
       </div>
     `;
 
-    // 2. Crear una nueva página o sección en GrapesJS
     const nuevaPagina = editor.Pages.add({
-      name: pageName || "NuevaPagina",
+      name: pageName || "NewPage",
       component: componentHTML,
     });
 

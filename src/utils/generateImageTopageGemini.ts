@@ -1,11 +1,10 @@
 import type { Editor } from "@grapesjs/studio-sdk/dist/typeConfigs/gjsExtend.js";
 
-export async function GenerateImageToPage(
+export async function GenerateImageToPageGemini(
   editor: Editor,
   file: File,
   projectName = "image-transform-code"
 ): Promise<string> {
-  console.log("📷 Imagen cargada:", file, projectName);
   const imageBase64 = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -13,7 +12,6 @@ export async function GenerateImageToPage(
     reader.readAsDataURL(file);
   });
 
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || "";
   const prompt = `You are a frontend developer and I will give you a screenshot of a user interface. Your task is to generate a clean HTML layout with inline CSS that can be directly used in GrapesJS.
 
   Important constraints:
@@ -32,42 +30,20 @@ export async function GenerateImageToPage(
   \`\`\`html
   <!-- Just the HTML code inside a <div>, ready to paste in GrapesJS -->`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("/api/generate-gemini", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o", // O "gpt-4-vision-preview" según habilitación
-      messages: [
-        {
-          role: "system",
-          content:
-            "You're an expert wizard at converting image designs into minimalist, editable HTML code. Returns only the HTML.",
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: prompt,
-            },
-            {
-              type: "image",
-              image: imageBase64.split(",")[1],
-            },
-          ],
-        },
-      ],
-      max_tokens: 3000,
-      temperature: 0.2,
+      imageBase64,
+      prompt,
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Error OpenAI: ${error}`);
+    throw new Error(`Error GeminiAI: ${error}`);
   }
   const data = await response.json();
 

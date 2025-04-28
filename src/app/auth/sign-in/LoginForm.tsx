@@ -11,6 +11,7 @@ import { API_ROUTES } from "@/lib/api.routes";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
@@ -41,12 +42,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         }),
       });
       const data = await response.json();
-      console.log("Data", data);
+
       if (response.ok && data.shareId) {
-        alert("Proyecto creado exitosamente");
+        toast("Successful Login ", {
+          description: "Now you can start collaborating with your teammates.",
+        });
         router.push(`/grapesjs/${data.shareId}`);
       } else {
-        alert("Error al crear proyecto");
+        toast("Error al crear proyecto", {
+          description: "Please try again later.",
+        });
       }
     }
   };

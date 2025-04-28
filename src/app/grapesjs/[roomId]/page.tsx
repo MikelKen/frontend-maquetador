@@ -13,7 +13,6 @@ interface User {
   name: string;
   color: string;
 }
-
 export default function CollaborativeEditorPage() {
   const [editor, setEditor] = useState<Editor>();
   const [users, setUsers] = useState<User[]>([]);
@@ -36,7 +35,6 @@ export default function CollaborativeEditorPage() {
     if (!socket) return;
 
     const handleRoomUsers = (activeUsers: User[]) => {
-      console.log("Users in room", activeUsers);
       setUsers(activeUsers);
     };
     const handleUserJoined = (data: { userId: string; allUsers: User[] }) => {
@@ -73,7 +71,6 @@ export default function CollaborativeEditorPage() {
     console.log("Editor is ready!");
     editorRef.current = editor;
     setEditor(editor);
-    // You could add additional setup here
   };
 
   if (!roomId) {
@@ -81,9 +78,9 @@ export default function CollaborativeEditorPage() {
   }
 
   if (!socket) {
-    return <div>Conectando...</div>; // 👈 Este es tu nuevo control
+    return <div>Conectando...</div>;
   }
-  console.log("user colaborador", users);
+
   return (
     <div className="editor-page">
       <Navbar onShare={handleShare} users={users} editor={editor} />

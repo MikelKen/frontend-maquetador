@@ -4,7 +4,7 @@ let socket: Socket | null = null;
 
 export const connectSocket = (options: { roomId: string; userId: string; userName: string; userColor: string }) => {
   if (!socket) {
-    socket = io("http://localhost:4000", {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || "http://localhost:3000", {
       query: options,
     });
   }

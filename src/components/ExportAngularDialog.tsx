@@ -62,7 +62,12 @@ function ExportAngularDialog({ editor, xmlFile }: { editor?: Editor; xmlFile?: F
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" className="bg-cyan-600 hover:bg-cyan-700" onClick={handleProjectExport}>
+          <Button
+            variant={"outline"}
+            type="button"
+            className="bg-cyan-600 hover:bg-cyan-700"
+            onClick={handleProjectExport}
+          >
             Export
           </Button>
         </DialogFooter>

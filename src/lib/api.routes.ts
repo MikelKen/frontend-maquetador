@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:4000/api";
+export const API_URL = "http://localhost:3000/api";
 
 export const API_ROUTES = {
   SIGN_UP: {
@@ -17,5 +17,17 @@ export const API_ROUTES = {
   PROJECT_CREATE: {
     url: `${API_URL}/project`,
     method: "POST",
+  },
+  PROJECT_PATH: {
+    url: `${API_URL}/project`,
+    method: "PATCH",
+  },
+  PROJECT_LIST: {
+    url: `${API_URL}/project`,
+    method: "GET",
+  },
+  PROJECT_DELETE: {
+    url: `${API_URL}/project`,
+    method: "DELETE",
   },
 };
