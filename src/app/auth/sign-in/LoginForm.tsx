@@ -49,7 +49,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         });
         router.push(`/grapesjs/${data.shareId}`);
       } else {
-        toast("Error al crear proyecto", {
+        toast("Error login", {
           description: "Please try again later.",
         });
       }

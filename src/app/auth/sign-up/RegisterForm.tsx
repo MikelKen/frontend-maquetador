@@ -10,12 +10,12 @@ import { useAuthStore } from "@/lib/useAuthStore";
 import { API_ROUTES } from "@/lib/api.routes";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export function SignUpForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const [showPassword, setShowPassword] = useState(false);
-  const [password, setPassword] = useState("");
 
   const [data, setData] = useState({
     name: "",
@@ -29,6 +29,7 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(data);
     try {
       const response = await fetch(API_ROUTES.SIGN_UP.url, {
         method: API_ROUTES.SIGN_UP.method,
@@ -40,7 +41,7 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
 
       if (!response.ok) {
         const err = await response.json();
-        alert(err.detail || "Error al registrarse");
+        toast(err.detail || "Error al registrarse");
         return;
       }
 
@@ -67,16 +68,21 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
         const projectData = await projectResponse.json();
 
         if (projectResponse.ok && projectData.shareId) {
-          alert("Proyecto creado exitosamente");
-
+          toast("Successful Register ", {
+            description: "Now you can start collaborating with your teammates.",
+          });
           router.push(`/grapesjs/${projectData.shareId}`);
         } else {
-          alert("Error al crear proyecto");
+          toast("Error register", {
+            description: "Please try again later.",
+          });
         }
       }
     } catch (err) {
       console.error("Error:", err);
-      alert("Ocurrió un error");
+      toast("Error ", {
+        description: "Please try again later.",
+      });
     }
   };
 
@@ -122,8 +128,9 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    name="password"
+                    value={data.password}
+                    onChange={handleChange}
                     required
                     className="pr-10"
                   />

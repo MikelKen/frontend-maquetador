@@ -29,6 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   registerSuccessMessage: null,
 
   login: async (email: string, password: string) => {
+    console.log("Login", email, password);
     set({ loading: true, error: null });
     try {
       const response = await fetch(API_ROUTES.SIGN_IN.url, {
