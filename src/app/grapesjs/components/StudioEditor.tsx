@@ -53,7 +53,7 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
 
     createStudioEditor({
       root: "#studio-editor",
-      licenseKey: "c2240ba690d1463fa178fa79c4b4d757e433249c56ec4fb4ac9c0a98ab295070",
+      licenseKey: `${process.env.NEXT_PUBLIC_GRAPEJS_API_KEY}`, //"c2240ba690d1463fa178fa79c4b4d757e433249c56ec4fb4ac9c0a98ab295070",
       theme: "light",
       customTheme: {
         default: {
