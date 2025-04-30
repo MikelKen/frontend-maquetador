@@ -69,16 +69,11 @@ Your output must be:
   const match = content.match(/```html([\\s\\S]*?)```/i);
   const html = (match ? match[1] : content).trim();
 
-  const cleanHTML = html
-    .replace(/```html/g, "")
-    .replace(/```/g, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .trim();
   const nuevaPagina = editor.Pages.add({
     name: projectName,
   });
 
-  nuevaPagina?.getMainComponent().append(cleanHTML);
+  nuevaPagina?.getMainComponent().append(html);
 
   editor.Pages.select(nuevaPagina || "home");
 }
