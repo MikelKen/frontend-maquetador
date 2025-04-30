@@ -85,12 +85,12 @@ export async function GenerateXmlToPages(xmlFile: File, editor: Editor) {
       </div>
     `;
 
-    const nuevaPagina = editor.Pages.add({
+    const newPage = editor.Pages.add({
       name: pageName || "NewPage",
       component: componentHTML,
     });
 
-    if (!nuevaPagina) {
+    if (!newPage) {
       console.error("No se pudo crear la página en GrapesJS:", pageName);
     }
   }

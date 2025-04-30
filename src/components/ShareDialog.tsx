@@ -13,12 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Share2, Copy } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { API_URL } from "@/lib/api.routes";
 import { toast } from "sonner";
 
 function ShareDialog() {
   const id = usePathname();
-  const urlShare = `${API_URL}${id}`;
+  const urlShare = typeof window !== "undefined" ? `${window.location.origin}${id}` : "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(urlShare);

@@ -30,4 +30,8 @@ export const API_ROUTES = {
     url: `${API_URL}/project`,
     method: "DELETE",
   },
+  GEMINI_API: {
+    url: `${API_URL}/gemini`,
+    method: "POST",
+  },
 };

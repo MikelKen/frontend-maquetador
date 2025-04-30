@@ -6,7 +6,7 @@ import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { UploadCloud } from "lucide-react";
 import type { Editor } from "grapesjs";
-import { GenerateImageToPage } from "@/utils/generateImageToPage";
+// import { GenerateImageToPage } from "@/utils/generateImageToPage";
 import { GenerateImageToPageGemini } from "@/utils/generateImageTopageGemini";
 
 function ImageToUIComponent({ editor }: { editor?: Editor }) {
@@ -29,20 +29,8 @@ function ImageToUIComponent({ editor }: { editor?: Editor }) {
 
   const handleGenerateImageToUI = async () => {
     if (!editor || !fileImage) return;
-
-    try {
-      console.log("🔵 Intentando con OpenAI...");
-      await GenerateImageToPage(editor, fileImage, "GeneratedByOpenAI");
-    } catch (error) {
-      console.error("❌ OpenAI falló, intentando con Gemini...", error);
-
-      try {
-        await GenerateImageToPageGemini(editor, fileImage, "GeneratedByGemini");
-      } catch (geminiError) {
-        console.error("❌ Gemini también falló", geminiError);
-        alert("No se pudo generar la UI con ninguna IA. 🚫");
-      }
-    }
+    // await GenerateImageToPage(editor, fileImage, "GeneratedByOpenAI");
+    await GenerateImageToPageGemini(editor, fileImage, "GeneratedByGemini");
   };
   return (
     <TabsContent value="imageAI">
