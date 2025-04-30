@@ -6,7 +6,7 @@ import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { UploadCloud } from "lucide-react";
 import type { Editor } from "grapesjs";
-import { GenerateImageToPage } from "@/utils/generateImageToPage";
+import { GenerateImageToPage } from "@/utils/generateImageToPageOpenAI";
 import { GenerateImageToPageGemini } from "@/utils/generateImageTopageGemini";
 
 function ImageToUIComponent({ editor, onSuccess }: { editor?: Editor; onSuccess?: () => void }) {

@@ -66,18 +66,19 @@ Your output must be:
   const json = await response.json();
   const content: string = json.choices?.[0]?.message?.content ?? "";
 
-  // Extraemos bloque html
   const match = content.match(/```html([\\s\\S]*?)```/i);
   const html = (match ? match[1] : content).trim();
 
-  // Inyectamos en GrapesJS
+  const cleanHTML = html
+    .replace(/```html/g, "")
+    .replace(/```/g, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .trim();
   const nuevaPagina = editor.Pages.add({
     name: projectName,
   });
 
-  // 2. Insertar el HTML generado por IA
-  nuevaPagina?.getMainComponent().append(html);
+  nuevaPagina?.getMainComponent().append(cleanHTML);
 
-  // 3. Seleccionar automáticamente esa nueva página
   editor.Pages.select(nuevaPagina || "home");
 }
