@@ -13,10 +13,13 @@ import type { Editor } from "grapesjs";
 
 import ImageToUIComponent from "./ImageToUIComponent";
 import XmlToUIComponent from "./XmlToUIComponent";
+import { useState } from "react";
 
 export function TabsGenerator({ editor }: { editor?: Editor }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
@@ -41,10 +44,10 @@ export function TabsGenerator({ editor }: { editor?: Editor }) {
           </TabsList>
 
           {/* Imagen a UI */}
-          <ImageToUIComponent editor={editor} />
+          <ImageToUIComponent editor={editor} onSuccess={() => setOpen(false)} />
 
           {/* XML a UI */}
-          <XmlToUIComponent editor={editor} />
+          <XmlToUIComponent editor={editor} onSuccess={() => setOpen(false)} />
         </Tabs>
       </DialogContent>
     </Dialog>

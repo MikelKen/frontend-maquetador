@@ -6,12 +6,13 @@ import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { UploadCloud } from "lucide-react";
 import type { Editor } from "grapesjs";
-// import { GenerateImageToPage } from "@/utils/generateImageToPage";
+import { GenerateImageToPage } from "@/utils/generateImageToPage";
 import { GenerateImageToPageGemini } from "@/utils/generateImageTopageGemini";
 
-function ImageToUIComponent({ editor }: { editor?: Editor }) {
+function ImageToUIComponent({ editor, onSuccess }: { editor?: Editor; onSuccess?: () => void }) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fileImage, setFileImage] = useState<File | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const onDropImage = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -27,10 +28,25 @@ function ImageToUIComponent({ editor }: { editor?: Editor }) {
     onDrop: onDropImage,
   });
 
-  const handleGenerateImageToUI = async () => {
+  const handleGenerate = async (source: "Gemini" | "OpenAI") => {
     if (!editor || !fileImage) return;
-    // await GenerateImageToPage(editor, fileImage, "GeneratedByOpenAI");
-    await GenerateImageToPageGemini(editor, fileImage, "GeneratedByGemini");
+    setIsGenerating(true);
+
+    try {
+      if (source === "Gemini") {
+        await GenerateImageToPageGemini(editor, fileImage, "GeneratedByGemini");
+      } else {
+        await GenerateImageToPage(editor, fileImage, "GeneratedByOpenAI");
+      }
+
+      setFileImage(null);
+      setImagePreview(null);
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Error generando UI:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
   return (
     <TabsContent value="imageAI">
@@ -62,14 +78,28 @@ function ImageToUIComponent({ editor }: { editor?: Editor }) {
             )}
           </div>
         </CardContent>
-        <CardFooter>
-          <Button
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-            disabled={!imagePreview}
-            onClick={handleGenerateImageToUI}
-          >
-            Generate UI
-          </Button>
+        <CardFooter className="flex justify-between w-full">
+          {isGenerating ? (
+            <div className="text-cyan-400 animate-pulse text-sm w-full text-center">Generating UI, please wait...</div>
+          ) : (
+            <>
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                disabled={!imagePreview}
+                onClick={() => handleGenerate("Gemini")}
+              >
+                Generate UI Gemini
+              </Button>
+              <Button
+                variant={"outline"}
+                className="border-cyan-600 text-cyan-300 hover:bg-cyan-800 cursor-pointer"
+                disabled={!imagePreview}
+                onClick={() => handleGenerate("OpenAI")}
+              >
+                Generate UI Open AI
+              </Button>
+            </>
+          )}
         </CardFooter>
       </Card>
     </TabsContent>

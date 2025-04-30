@@ -7,14 +7,16 @@ import { GenerateXmlToPages } from "@/utils/generateXmlToPages";
 import { FileUp, ClipboardPaste, UploadCloud, FileText, XCircle } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import ExportAngularDialog from "./ExportAngularDialog";
+import { toast } from "sonner";
 
-function XmlToUIComponent({ editor }: { editor?: Editor }) {
+function XmlToUIComponent({ editor, onSuccess }: { editor?: Editor; onSuccess?: () => void }) {
   const [xmlContent, setXmlContent] = useState<string>("");
   const [modoPegado, setModoPegado] = useState(false);
   const [modoDrag, setModoDrag] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [xmlFile, setXmlFile] = useState<File | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // XML dropzone
   const onDropXml = useCallback((acceptedFiles: File[]) => {
@@ -50,6 +52,7 @@ function XmlToUIComponent({ editor }: { editor?: Editor }) {
 
   const handleGenerateXmlToUI = async () => {
     if (!editor) return;
+    setIsGenerating(true);
     let blob: File | undefined;
     if (modoPegado && xmlContent.trim()) {
       blob = new File([xmlContent], "pego-xml.xml", { type: "text/xml" });
@@ -59,9 +62,10 @@ function XmlToUIComponent({ editor }: { editor?: Editor }) {
 
     if (blob) {
       await GenerateXmlToPages(blob, editor);
-      alert("¡Páginas generadas exitosamente!");
+      toast("¡Páginas generadas exitosamente!");
+      if (onSuccess) onSuccess();
     } else {
-      alert("Selecciona o pega un archivo XML válido");
+      toast("Selecciona o pega un archivo XML válido");
     }
   };
   return (
@@ -153,16 +157,24 @@ function XmlToUIComponent({ editor }: { editor?: Editor }) {
           )}
         </CardContent>
         <CardFooter className="flex items-center">
-          <Button
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-            disabled={!xmlContent}
-            onClick={handleGenerateXmlToUI}
-          >
-            Generate XML to UI
-          </Button>
-          <div className="flex-1"></div>
+          {isGenerating ? (
+            <div className="text-cyan-400 animate-pulse text-sm w-full text-center">
+              Generating UI on pages, please wait...
+            </div>
+          ) : (
+            <>
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                disabled={!xmlContent}
+                onClick={handleGenerateXmlToUI}
+              >
+                Generate XML to UI
+              </Button>
+              <div className="flex-1"></div>
 
-          <ExportAngularDialog editor={editor} xmlFile={xmlFile ?? undefined} />
+              <ExportAngularDialog editor={editor} xmlFile={xmlFile ?? undefined} />
+            </>
+          )}
         </CardFooter>
       </Card>
     </TabsContent>

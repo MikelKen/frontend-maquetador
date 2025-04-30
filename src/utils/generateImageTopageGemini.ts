@@ -1,5 +1,6 @@
 import { API_ROUTES } from "@/lib/api.routes";
 import type { Editor } from "@grapesjs/studio-sdk/dist/typeConfigs/gjsExtend.js";
+import { toast } from "sonner";
 
 export async function GenerateImageToPageGemini(editor: Editor, file: File, projectName = "image-transform-code") {
   try {
@@ -35,6 +36,6 @@ export async function GenerateImageToPageGemini(editor: Editor, file: File, proj
     editor.Pages.select(newPage || "home");
   } catch (error) {
     console.error("Error al generar UI desde imagen:", error);
-    alert("Ocurrió un error al generar la interfaz. Revisa la consola.");
+    toast("An error occurred while generating the interface. Check the console.");
   }
 }

@@ -16,6 +16,7 @@ import "@grapesjs/studio-sdk/style";
 import type { Editor } from "@grapesjs/studio-sdk/dist/typeConfigs/gjsExtend.js";
 import { Socket } from "socket.io-client";
 import { generateColorFromString } from "@/utils/generateColorFromString";
+import { toast } from "sonner";
 
 type Props = {
   onEditorReady?: (editor: Editor) => void;
@@ -47,7 +48,7 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
     const hasVisited = localStorage.getItem("hasVisitedGrapesEditor");
 
     if (!hasVisited) {
-      alert("👋 ¡Bienvenido/a al editor! Aquí podrás diseñar tus páginas con libertad.");
+      toast("👋 Welcome to the editor! Here you can design your pages freely..");
       localStorage.setItem("hasVisitedGrapesEditor", "true");
     }
 
@@ -103,7 +104,7 @@ const StudioEditorComponent = ({ onEditorReady, roomId, userId, socket }: Props)
               name: "Página Inicial",
               styles: "",
               component: `<section style="padding: 50px; text-align: center; color: white;">
-                  <h1 style="font-size: 2.5rem; color: #3B82F6;">👋 ¡Bienvenido al editor!</h1>
+                  <h1 style="font-size: 2.5rem; color: #3B82F6;">👋 Welcome to the editor!</h1>
                   <p style="font-size: 1.2rem;">Empezá a construir tu página con los bloques de la izquierda.</p>
                 </section>`,
             },
