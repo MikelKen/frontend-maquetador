@@ -217,6 +217,7 @@ async function updateAppComponent(appName, valid) {
   const html = \`
 <div class="layout">
   <aside class="sidebar">
+    <h2>📁 Navegación</h2>
     <ul>
       \${valid
         .map((c) => {
@@ -248,31 +249,52 @@ export class AppComponent {}\`;
 .layout {
   display: flex;
   height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .sidebar {
-  width: 240px;
-  background: #f4f4f4;
+  width: 260px;
+  background: #1f2937;
+  color: #fff;
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sidebar h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: #60a5fa;
+  text-align: center;
 }
 .sidebar ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 .sidebar li {
-  margin: 12px 0;
+  margin: 10px 0;
 }
 .sidebar a {
+  display: block;
+  padding: 10px 16px;
+  border-radius: 8px;
   text-decoration: none;
-  color: #333;
-  font-weight: bold;
+  color: #cbd5e1;
+  transition: background 0.3s, color 0.3s;
+}
+.sidebar a:hover {
+  background: #374151;
+  color: #fff;
 }
 .sidebar a.active {
   color: #1976d2;
 }
 .content {
   flex: 1;
-  padding: 20px;
+  background: #f9fafb;
+  padding: 40px;
+  overflow-y: auto;
 }\`;
 
   await Promise.all([
